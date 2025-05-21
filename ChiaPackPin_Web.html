@@ -1,0 +1,59 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>ChiaPackPin - Chia Cell Tối Ưu</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+    input, textarea, button { margin: 5px 0; padding: 8px; width: 100%; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <h1>🔋 ChiaPackPin</h1>
+  <p><strong>Nhập danh sách dung lượng cell (mAh), phân cách bằng dấu phẩy:</strong></p>
+  <textarea id="inputCells" rows="4">2100, 2200, 2000, 2150, 2200, 2100, 2050, 2250, 2300, 2150</textarea>
+  <label>Số cell nối tiếp (S): <input type="number" id="series" value="2"></label>
+  <label>Số pack song song (P): <input type="number" id="parallel" value="3"></label>
+  <button onclick="generatePacks()">Chia Pack</button>
+  <div id="result"></div>
+
+  <script>
+    function generatePacks() {
+      const input = document.getElementById('inputCells').value;
+      const series = parseInt(document.getElementById('series').value);
+      const parallel = parseInt(document.getElementById('parallel').value);
+      const total = series * parallel;
+
+      let cells = input.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+      cells = cells.slice(0, total).sort((a, b) => b - a);
+
+      const packs = Array.from({ length: parallel }, () => []);
+      const sums = Array(parallel).fill(0);
+
+      for (let cap of cells) {
+        let minIdx = sums.indexOf(Math.min(...sums));
+        packs[minIdx].push(cap);
+        sums[minIdx] += cap;
+      }
+
+      const avg = sums.reduce((a, b) => a + b, 0) / parallel;
+
+      let html = '<h2>Kết Quả Chia Pack</h2>';
+      html += '<table><tr><th>Pack</th><th>Cells</th><th>Tổng (mAh)</th><th>% Lệch</th><th>Độ lệch chuẩn</th></tr>';
+      packs.forEach((p, i) => {
+        const total = p.reduce((a, b) => a + b, 0);
+        const mean = total / p.length;
+        const std = Math.sqrt(p.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / p.length);
+        const dev = ((total - avg) / avg * 100).toFixed(2) + '%';
+        html += `<tr><td>Pack ${i + 1}</td><td>${p.join(', ')}</td><td>${total}</td><td>${dev}</td><td>${std.toFixed(2)}</td></tr>`;
+      });
+      html += '</table>';
+      document.getElementById('result').innerHTML = html;
+    }
+  </script>
+</body>
+</html>
